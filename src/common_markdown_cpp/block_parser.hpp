@@ -10,7 +10,8 @@ constexpr int LIST_ITEM = 1;
 constexpr int LIST = 2;
 constexpr int QUOTE = 3;
 constexpr int PARAGRAPH = 10;
-constexpr int CODE = 11;
+constexpr int INDENTED_CODE = 11;
+constexpr int FENCED_CODE = 12;
 
 struct Block {
   int block_type = DOCUMENT;
@@ -29,6 +30,13 @@ inline bool is_container(Block &block) {
 inline bool is_block_terminated(Block &block, std::string line) {
   // TODO if CODE:..
   return line.empty(); // not good enough, compare with "whitespaces or empty"
+}
+
+inline bool is_block_with_special_termination(Block &block) {
+  if (block.block_type == FENCED_CODE)
+    return true;
+  else
+    return false;
 }
 
 struct ContinuedBlockResult {
@@ -68,6 +76,9 @@ detect_next_block_to_insert(std::shared_ptr<Block> block, std::string line) {
       }
     }
   }
+  if (is_block_with_special_termination(*result.last_block)) {
+    result.block_to_insert = result.last_block;
+  }
   return result;
 }
 
@@ -78,13 +89,14 @@ inline void add_next_line(std::shared_ptr<Block> block, std::string line) {
   if (is_container(*c.block_to_insert)) {
     // start a new block
 
-    // TODO if...
+    // TODO detect new type of block + create new block (may be called
+    // recursively in case of lists...)
     std::shared_ptr<Block> new_block = std::make_shared<Block>();
     new_block->block_type = PARAGRAPH;
     new_block->text.push_back(c.line);
     c.block_to_insert->blocks.push_back(new_block);
   } else {
-    // TODO if "finished"
+    // TODO detect if block is "finished"
     if (is_block_terminated(*c.block_to_insert, c.line)) {
       c.block_to_insert->closed = true;
     } else {
