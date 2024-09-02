@@ -70,7 +70,7 @@ detect_next_block_to_insert(std::shared_ptr<Block> block, std::string line) {
   } else { // leaf block
     if (block->block_type == PARAGRAPH) {
       result = {block, find_last_block(block), line};
-    } else if (block->block_type == CODE) {
+    } else if (block->block_type == INDENTED_CODE) {
       if (line.starts_with("    ")) {
         result = {block, find_last_block(block), line.substr(4)};
       }
